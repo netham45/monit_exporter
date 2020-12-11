@@ -46,6 +46,7 @@ type monitService struct {
         Status          int             `xml:"status"`
         Monitored       string          `xml:"monitor"`
         Port            []monitPort     `xml:"port"`
+        ICMP            []monitICMP     `xml:"icmp"`
 }
 
 type monitPort struct {
@@ -53,7 +54,12 @@ type monitPort struct {
         Protocol        string          `xml:"protocol"`
         Type            string          `xml:"type"`
         Hostname        string          `xml:"hostname"`
-        ResponseTime    float64                 `xml:"responsetime"`
+        ResponseTime    float64         `xml:"responsetime"`
+}
+
+type monitICMP struct {
+        Type            string          `xml:"type"`
+        ResponseTime    float64         `xml:"responsetime"`
 }
 
 // Exporter collects monit stats from the given URI and exports them using
@@ -186,11 +192,17 @@ func (e *Exporter) scrape() error {
                 } else {
                         e.up.Set(1)
                         // Constructing metrics
+                        // Status set to 1 for failure, 0 for success
                         for _, service := range parsedData.MonitServices {
                                 for _, port := range service.Port {
-                                        status := 0
-                                        if (port.ResponseTime > 0) { status = 1 }
+                                        status := 1 
+                                        if (port.ResponseTime > 0) { status = 0 }
                                         e.checkStatus.With(prometheus.Labels{"port":strconv.Itoa(port.PortNumber), "porttype":port.Type, "protocol":port.Protocol, "check_name": service.Name, "type": serviceTypes[service.Type], "monitored": service.Monitored}).Set(float64(status))
+                                }
+                                for _, icmp := range service.ICMP {
+                                        status := 1
+                                        if (icmp.ResponseTime > 0) { status = 0 }
+                                        e.checkStatus.With(prometheus.Labels{"port":"ICMP", "porttype":icmp.Type, "protocol":"ICMP", "check_name": service.Name, "type": serviceTypes[service.Type], "monitored": service.Monitored}).Set(float64(status))
                                 }
                         }
                 }
