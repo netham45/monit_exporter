@@ -2,6 +2,15 @@
 
 Simple server that periodically scrapes monit status and exports checks information via HTTP for Prometheus.
 
+Install dependencies*:
+```go get github.com/prometheus/client_golang/prometheus
+go get github.com/prometheus/log
+go get github.com/spf13/viper
+go get golang.org/x/net/html/charset
+```
+
+CentOS 7: You can install git222 from https://ius.io/ for go get to work right.
+
 Build it:
 ```bash
 go build
